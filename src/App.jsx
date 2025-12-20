@@ -1,8 +1,10 @@
+import PlannerPage from "./pages/PlannerPage"
+
 function App() {
   return (
-    <>
-      <div>Hello World</div>
-    </>
+    <main>
+      <PlannerPage/>   
+    </main>
   )
 }
 
