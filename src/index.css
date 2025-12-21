@@ -12,7 +12,7 @@ html, body{
 
 @layer components{
   main{
-    @apply w-auto;
+    @apply w-[100%] md:p-20 p-10;
   }
   
   table{
