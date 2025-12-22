@@ -1,27 +1,25 @@
 import { useEffect, useState } from "react"
-import { initialTimeSlots  } from "../../constants"
 
-const Planner= ({ canEdit, undo })=>{
-    const [timeSlots, setTimeSlots]= useState(initialTimeSlots)
+const Planner= ({ todos, canEdit, onChange, undo })=>{
     const [backup, setBackup] = useState(null);
 
     useEffect(() => {
         if (canEdit) {
-        setBackup(timeSlots);
+            setBackup(todos);  // Deep copy
         }
     }, [canEdit]);    
 
     useEffect(() => {
         if (undo && backup) {
-        setTimeSlots(backup);
+        onChange(backup);
         }
-    }, [undo]);
+    }, [undo, backup, onChange]);
 
     const handleTaskChange = (index, value) => {
-    setTimeSlots((prev) =>
-        prev.map((slot, i) =>
-        i === index ? { ...slot, task: value } : slot
-        ));
+        onChange((prev) =>
+            prev.map((slot, i) =>
+            i === index ? { ...slot, task: value } : slot
+         ));
     };
 
     return(
@@ -34,9 +32,9 @@ const Planner= ({ canEdit, undo })=>{
                         </tr>
                     </thead>
                     <tbody>
-                        {timeSlots.map((slot, index)=>(
+                        {todos.map((slot, index)=>(
                             <tr key={index}>
-                                <td>{slot.time}</td>
+                                <td>{slot.time ? slot.time.slice(0, 5) : '--:--'}</td>
 
                                 <td>
 
