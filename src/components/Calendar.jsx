@@ -2,13 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { format, parseISO, addDays, subDays } from 'date-fns';
 import { IoMdArrowDropleft, IoMdArrowDropright } from 'react-icons/io';
 
-const Calendar= ()=>{
+const Calendar= ({selectedDate, onChange})=>{
     
-    const today = new Date();
     const calendarRef = useRef(null);
     const containerRef = useRef(null);
-    
-    const [selectedDate, setSelectedDate] = useState(today);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     // Handle calendar change
@@ -18,7 +15,7 @@ const Calendar= ()=>{
         const handleChange = (e) => {
             const newDate = parseISO(e.target.value);
             console.log(newDate)
-            setSelectedDate(newDate);
+            onChange(newDate);
             setIsCalendarOpen(false); // Close after selection
         };
 
@@ -44,16 +41,16 @@ const Calendar= ()=>{
     // Update calendar when selectedDate changes
     useEffect(() => {
         if (calendarRef.current) {
-        calendarRef.current.value = format(selectedDate, 'yyyy-MM-dd');
+        calendarRef.current.value = selectedDate;
         }
     }, [selectedDate]);
 
     const handlePrevDay = () => {
-        setSelectedDate(prev => subDays(prev, 1));
+        onChange(prev => subDays(prev, 1));
     };
 
     const handleNextDay = () => {
-        setSelectedDate(prev => addDays(prev, 1));
+        onChange(prev => addDays(prev, 1));
     };
 
     return (
