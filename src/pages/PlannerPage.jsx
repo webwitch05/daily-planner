@@ -63,20 +63,22 @@ const PlannerPage= ()=>{
 
     const handleSave= async() => {
         try{
+            const dateStr = format(selectedDate, 'yyyy-MM-dd');
+
             const plannedPayLoad= plannedState.current.map((slot)=> ({
-                planner_date: format(selectedDate, 'yyyy-MM-dd'), 
+                planner_date: dateStr, 
                 planned_time: slot.time,
                 task: slot.task
             }));
 
             const realityPayLoad= realityState.current.map((slot)=> ({
-                planner_date: format(selectedDate, 'yyyy-MM-dd'), 
+                planner_date: dateStr, 
                 planned_time: slot.time,
                 task: slot.task
             }));
 
-            await updatePlanned(plannedPayLoad);
-            await updateReality(realityPayLoad)
+            await updatePlanned(plannedPayLoad, dateStr);
+            await updateReality(realityPayLoad, dateStr)
             setCanEdit(false);
         } catch (err){
             console.error("Save failed:", err)
