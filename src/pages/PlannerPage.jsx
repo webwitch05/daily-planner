@@ -1,59 +1,75 @@
 import { format } from 'date-fns';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
 import { BsPencilSquare } from "react-icons/bs";
 import { IoIosReturnLeft } from "react-icons/io";
 
 import Calendar from "../components/Calendar"
 import Planner from "../components/Planner"
 import { defaultTodos } from "../constants/index";
+import { plannerReducer } from "../reducers/plannerReducer";
 import { fetchPlanned, updatePlanned, fetchReality, updateReality } from "../services/plannerService";
 
 const PlannerPage= ()=>{  
 
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const [planned, setPlanned] = useState([]);
-    const [reality, setReality] = useState([]);
     const [canEdit, setCanEdit]= useState(false)
-    const [undo, setUndo]= useState(false)
+
+    const [plannedState, dispatchPlanned] = useReducer(plannerReducer, {
+        current: [],
+        history: []
+    });
+    
+    const [realityState, dispatchReality] = useReducer(plannerReducer, {
+        current: [],
+        history: []
+    });    
 
     useEffect(() => {
-        const loadPlanned= async()=>{
-            try{
-                const data= await fetchPlanned(format(selectedDate, 'yyyy-MM-dd'))
-                setPlanned(data.length > 0 ? data : defaultTodos)
+        const loadData = async () => {
+            try {
+                const dateStr = format(selectedDate, 'yyyy-MM-dd');
+                const [plannedData, realityData] = await Promise.all([
+                    fetchPlanned(dateStr),
+                    fetchReality(dateStr)
+                ]);
+                dispatchPlanned({ 
+                    type: 'SET_TODOS', 
+                    payload: plannedData.length > 0 ? plannedData : defaultTodos 
+                });
+                dispatchReality({ 
+                    type: 'SET_TODOS', 
+                    payload: realityData.length > 0 ? realityData : defaultTodos 
+                });
             } catch (err) {
                 console.error(err);
-                setPlanned(defaultTodos)
+                dispatchPlanned({ type: 'SET_TODOS', payload: defaultTodos });
+                dispatchReality({ type: 'SET_TODOS', payload: defaultTodos });
             }
-        }
+        };
+        loadData();
+    }, [selectedDate]); 
 
-        loadPlanned();
-    }, [selectedDate]);    
+    const handleEdit = () => {
+        dispatchPlanned({ type: 'START_EDIT' });
+        dispatchReality({ type: 'START_EDIT' });
+        setCanEdit(true);
+    };
 
-
-    useEffect(() => {
-        const loadReality= async()=>{
-            try{
-                const data= await fetchReality(format(selectedDate, 'yyyy-MM-dd'))
-                setReality(data.length > 0 ? data : defaultTodos)
-            } catch (err) {
-                console.error(err);
-                setReality(defaultTodos)
-            }
-        }
-
-        loadReality();
-    }, [selectedDate]);    
+    const handleUndo = () => {
+        dispatchPlanned({ type: 'UNDO' });
+        dispatchReality({ type: 'UNDO' });
+        setCanEdit(false);
+    };     
 
     const handleSave= async() => {
         try{
-            const plannedPayLoad= planned.map((slot)=> ({
+            const plannedPayLoad= plannedState.current.map((slot)=> ({
                 planner_date: format(selectedDate, 'yyyy-MM-dd'), 
                 planned_time: slot.time,
                 task: slot.task
             }));
 
-            const realityPayLoad= reality.map((slot)=> ({
+            const realityPayLoad= realityState.current.map((slot)=> ({
                 planner_date: format(selectedDate, 'yyyy-MM-dd'), 
                 planned_time: slot.time,
                 task: slot.task
@@ -67,19 +83,20 @@ const PlannerPage= ()=>{
         }
     };
 
-    const handleUndo = () => {
-        setUndo(true);
-        setCanEdit(false);
-
-        // reset undo so it can be triggered again
-        setTimeout(() => setUndo(false), 0);
+    const handlePlannedChange = (newTodos) => {
+        dispatchPlanned({ type: 'SET_TODOS', payload: newTodos });
     };
+
+    const handleRealityChange = (newTodos) => {
+        dispatchReality({ type: 'SET_TODOS', payload: newTodos });
+    };    
 
     return(
         <>  
             <div className="relative flex-center flex-col gap-5">
                 
-                <div className="relative w-full flex-center">
+                <div className="relative w-full flex-center flex-row">
+
                     <Calendar
                         selectedDate= {selectedDate}
                         onChange= {setSelectedDate}
@@ -91,7 +108,7 @@ const PlannerPage= ()=>{
                     />
                     
                     :<BsPencilSquare 
-                        onClick={()=>{setCanEdit(true)}} 
+                        onClick={handleEdit} 
                         className="absolute left-1/2 translate-x-[180px] cursor-pointer"
                     />
                     }
@@ -99,18 +116,20 @@ const PlannerPage= ()=>{
                 
                 <div className="flex flex-row gap-40">
                     <Planner 
+                        position="left"
+                        type="planned"
                         selectedDate= {selectedDate}
-                        todos= {planned}
+                        todos= {plannedState.current}
                         canEdit={canEdit}
-                        onChange={setPlanned}
-                        undo= {undo}    
+                        onChange={handlePlannedChange}    
                     />
                     <Planner 
+                        position="right"
+                        type="reality"
                         selectedDate= {selectedDate}
-                        todos= {reality}
+                        todos={realityState.current}
                         canEdit={canEdit}
-                        onChange={setReality}
-                        undo= {undo}   
+                        onChange={handleRealityChange}                         
                     />
                 </div>
 

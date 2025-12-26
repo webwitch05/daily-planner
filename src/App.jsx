@@ -1,9 +1,12 @@
 import PlannerPage from "./pages/PlannerPage"
+import { PlannerProvider } from "./contexts/PlannerContext";
 
 function App() {
   return (
     <main>
-      <PlannerPage/>   
+      <PlannerProvider>
+        <PlannerPage/>
+      </PlannerProvider>   
     </main>
   )
 }

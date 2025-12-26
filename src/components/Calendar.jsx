@@ -3,7 +3,7 @@ import { format, parseISO, addDays, subDays } from 'date-fns';
 import { IoMdArrowDropleft, IoMdArrowDropright } from 'react-icons/io';
 
 const Calendar= ({selectedDate, onChange})=>{
-    
+
     const calendarRef = useRef(null);
     const containerRef = useRef(null);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
