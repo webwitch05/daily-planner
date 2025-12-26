@@ -1,26 +1,70 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import { format, addMinutes, startOfDay, setHours, addDays } from "date-fns";
+import { usePlannerContext } from "../contexts/PlannerContext";
+import StartEnd from "./StartEnd";
 
-const Planner= ({ todos, canEdit, onChange, undo })=>{
-    const [backup, setBackup] = useState(null);
+const Planner= ({ position, type, todos, canEdit, onChange })=>{
+    const containerRef = useRef(null);
+    const [isOpen, setIsOpen] = useState(false);
+
+    const { planned, reality } = usePlannerContext();
+    const config = (type==="planned") ? planned : reality
 
     useEffect(() => {
-        if (canEdit) {
-            setBackup(todos);  // Deep copy
-        }
-    }, [canEdit]);    
+        const newTodos = [];
+        
+        // Parse the time strings to get hours
+        const startHour = parseInt(config.start.split(':')[0]);
+        const endHour = parseInt(config.end.split(':')[0]);
+        
+        let newStart = setHours(startOfDay(new Date()), startHour);
+        let newEnd = setHours(startOfDay(new Date()), endHour);
 
-    useEffect(() => {
-        if (undo && backup) {
-        onChange(backup);
+        if (newEnd <= newStart) {
+            newEnd = addDays(newEnd, 1);  // Add 1 day to end time
+        }        
+
+        while (newStart <= newEnd) {
+            const newTime = format(newStart, "HH:mm:ss");
+            const existingSlot = todos.find(slot => slot.time === newTime);
+            
+            newTodos.push({
+                time: newTime, 
+                task: existingSlot ? existingSlot.task : ""
+            });
+            
+            newStart = addMinutes(newStart, parseInt(config.interval));
         }
-    }, [undo, backup, onChange]);
+        
+        onChange(newTodos);
+
+    }, [config.start, config.end, config.interval]);
+
+    const formatTime = (timeString) => {
+        if (!timeString) return '--:--';
+        return timeString.slice(0, 5);
+    };    
 
     const handleTaskChange = (index, value) => {
-        onChange((prev) =>
-            prev.map((slot, i) =>
+        const updatedTodos = todos.map((slot, i) =>
             i === index ? { ...slot, task: value } : slot
-         ));
+        );
+        onChange(updatedTodos); 
     };
+
+    useEffect(()=>{
+        const handleClickOutside= (e)=>{
+            if (containerRef.current && !containerRef.current.contains(e.target)){
+                setIsOpen(false)
+            }
+        }
+
+        if (isOpen){
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen])    
 
     return(
         <>
@@ -28,13 +72,18 @@ const Planner= ({ todos, canEdit, onChange, undo })=>{
                 <table className="w-[80%]">
                     <thead>
                         <tr>
-                            <th colSpan={2}>Schedule</th>
+                            <th colSpan={2}>Schedule
+                                <span 
+                                    className="badge"
+                                    onClick={()=>{setIsOpen(true)}}
+                                >StartEnd</span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {todos.map((slot, index)=>(
                             <tr key={index}>
-                                <td>{slot.time ? slot.time.slice(0, 5) : '--:--'}</td>
+                                <td>{formatTime(slot.time)}</td>
 
                                 <td>
 
@@ -57,6 +106,24 @@ const Planner= ({ todos, canEdit, onChange, undo })=>{
                     </tbody>
                 </table>
             </div>
+            
+            {isOpen &&
+            <div 
+                ref= {containerRef}
+                className={`fixed z-50 ${position === "left" ? 'translate-x-[250px]': 'translate-x-[750px]'}`}
+            >
+                <div className="modal">
+                    <StartEnd
+                        start= {config.start}
+                        end= {config.end}
+                        interval= {config.interval}
+                        changeStart= {config.changeStart}
+                        changeEnd= {config.changeEnd}
+                        changeInt= {config.changeInt}
+                    />
+                </div>
+            </div>
+            }
         </>           
     )
 }

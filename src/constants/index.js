@@ -1,16 +1,27 @@
-import { format, addMinutes, startOfDay } from "date-fns";
+import { format, addMinutes, startOfDay, setHours } from "date-fns";
 
-let current= startOfDay(new Date()).setHours(6);
+const intervalOptions= [15, 30, 60]
+
+let start = setHours(startOfDay(new Date()), 6);
+const defaultStart = setHours(startOfDay(new Date()), 6);
+const defaultEnd = setHours(startOfDay(new Date()), 26);
+
+const defaultTime= []
 const defaultTodos= []
 
-for (let i=0; i<18; i++){
+while (start<=defaultEnd){
+    defaultTime.push(format(start, "HH:mm:ss"));
     defaultTodos.push({
-        time: format(current, "HH:mm:ss"), 
+        time: format(start, "HH:mm:ss"), 
         task: ""
 });
-    current= addMinutes(current, 60)
+    start= addMinutes(start, intervalOptions[2])
 }
 
 export {
+    defaultTime,
     defaultTodos,
+    intervalOptions,
+    defaultStart,
+    defaultEnd,
 }

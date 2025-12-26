@@ -12,9 +12,9 @@ html, body{
 
 @layer components{
   main{
-    @apply w-[100%] md:p-20 p-10;
+    @apply w-[100%] md:p-20 p-10 flex-center;
   }
-  
+
   table{
     @apply w-[80%] font-[Roboto_Mono];
   }
@@ -38,5 +38,24 @@ html, body{
 
   calendar-date::part(button) {
     @apply border-0 bg-transparent outline-none p-3;
+  }
+  calendar-month::part(today) {
+    background-color: #ef4444;
+    color: white;
+    border-radius: 50%;
+  }
+  
+  .badge{
+    @apply bg-[#C67C4E] text-white m-5 p-2 rounded-2xl text-[10px];
+  }
+  .modal{
+    @apply  relative bg-[#f9f2ed] shadow-xl rounded-lg p-6;
+  }
+  .modal-backdrop {
+    @apply fixed inset-0 bg-[#f9f2ed]/50;
   }  
+
+  select{
+    @apply border border-solid rounded-lg ml-2;
+  }
 }
