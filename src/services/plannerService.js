@@ -5,7 +5,6 @@ const fetchPlanned= async(date)=> {
         .from("planned_tasks")
         .select("*")
         .eq("planner_date", date)
-        .order("planned_time")
 
         if (error){
             console.error("Error fetching:", error)
@@ -22,7 +21,6 @@ const fetchReality= async(date)=> {
         .from("actual_tasks")
         .select("*")
         .eq("planner_date", date)
-        .order("planned_time")
 
         if (error){
             console.error("Error fetching:", error)
@@ -44,25 +42,65 @@ const editTodos= (todos, target)=>{
     return todos
 }
 
-const updatePlanned= async (payload)=>{
-    const { error }= await supabase
-        .from("planned_tasks")
-        .upsert(payload)
+const updatePlanned = async (payload, date, intervalChanged= false) => {
 
-    if (error){
-        console.error("Planned update error:", error);
+    if (intervalChanged){
+        const { data: existing, error: deleteError } = await supabase
+            .from("planned_tasks")
+            .delete()
+            .eq('planner_date', date);
+        
+        if (existing.length==0) return
+
+        if (deleteError) {
+            console.error("Delete planned tasks error:", deleteError);
+            throw deleteError;
+        }
     }
-}
 
-const updateReality= async (payload)=>{
-    const { error }= await supabase
-        .from("actual_tasks")
-        .upsert(payload)
+    if (payload.length > 0) {
+        const { error: insertError } = await supabase
+            .from("planned_tasks")
+            .upsert(payload, {
+                onConflict: "planner_date,planned_time"
+            });
 
-    if (error){
-        console.error("Actual update error:", error);
+        if (insertError) {
+            console.error("Insert planned tasks error:", insertError);
+            throw insertError;
+        }
     }
-}
+};
+
+const updateReality = async (payload, date, intervalChanged= false) => {
+
+    if (intervalChanged){
+        const { data: existing, error: deleteError } = await supabase
+            .from("actual_tasks")
+            .delete()
+            .eq('planner_date', date);
+        
+        if (existing.length==0) return
+
+        if (deleteError) {
+            console.error("Delete reality tasks error:", deleteError);
+            throw deleteError;
+        }
+    }
+
+    if (payload.length > 0) {
+        const { error: insertError } = await supabase
+            .from("actual_tasks")
+            .upsert(payload, {
+                onConflict: "planner_date,planned_time"
+            });
+
+        if (insertError) {
+            console.error("Insert reality tasks error:", insertError);
+            throw insertError;
+        }
+    }
+};
 
 export {
     fetchPlanned,
